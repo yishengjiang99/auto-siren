@@ -1,6 +1,5 @@
 import { mkdiv } from "mkdiv";
 import { mkcanvas, chart } from "mk-60fps";
-const fftSize = 1 << 5;
 declare interface AutoSirenOptions {
   container?: HTMLElement;
   sirenBaseFreq?: number;
@@ -8,22 +7,25 @@ declare interface AutoSirenOptions {
   detectSoundFFT?: Float32Array;
   sirenFlashColors?: [string, string, string, string];
   sirenLFOFrequency?: number;
+  fftSize?: number;
   sirenCSS?: string;
 }
 const defaultOptions: AutoSirenOptions = {
   container: document.body,
+  fftSize: 1 << 9,
   sirenBaseFreq: 440,
   sirenDuration: 2.0,
-  detectSoundFFT: new Float32Array(fftSize).fill(1),
+  detectSoundFFT: new Float32Array(1 << 9).fill(1),
   sirenFlashColors: ["red", "blue", "red", "blue"],
   sirenLFOFrequency: 5,
   sirenCSS:
-    "z-index:-1;position:fixed;width:100vw;height:100vh;display:grid;grid-template-columns:1fr 1fr 1fr;justify-content:stretch",
+    "margin-top:100px;z-index:-1;position:fixed;width:100vw;height:100vh;display:grid;grid-template-columns:1fr 1fr 1fr;justify-content:stretch",
 };
 
-export async function autoSiren(params: AutoSirenOptions) {
+async function autoSiren(params: AutoSirenOptions = defaultOptions) {
   const {
     container,
+    fftSize,
     sirenBaseFreq,
     sirenFlashColors,
     sirenDuration,
@@ -74,15 +76,18 @@ export async function autoSiren(params: AutoSirenOptions) {
     await navigator.mediaDevices.getUserMedia({ audio: true })
   );
   const fft = new AnalyserNode(ctx, {
-    fftSize: 1024,
+    fftSize: fftSize,
     smoothingTimeConstant: 0.01,
   });
-  const fftBuffer = new Float32Array(fft.fftSize);
+  const fftBuffer = new Float32Array(fftSize);
   mic.connect(fft);
   const zeros = new Float32Array(2).fill(0);
   function checkLoop() {
     fft.getFloatFrequencyData(fftBuffer);
-    const normalized = fftBuffer.slice(10, 110).map((v) => v * 0.01);
+    const normalized = fftBuffer
+      .slice(0, fftSize / 2)
+      .map((v, idx) => ((v * detectSoundFFT[idx]) / fftSize) * 2);
+
     const indexVal = normalized.reduce((sum, v) => sum + v);
     chart(
       canvasCtx,
@@ -91,9 +96,9 @@ export async function autoSiren(params: AutoSirenOptions) {
 
     canvasCtx.strokeText("waaa index: " + indexVal, 10, 120, 130);
     canvasCtx.strokeText("siren: " + siren, 10, 200, 130);
-    if (!siren && indexVal > -70) {
+    if (!siren && indexVal > -10) {
       siren = 60;
-      startSiren();
+      //startSiren();
     }
     if (siren > 0) {
       siren -= 1.1;
@@ -109,8 +114,8 @@ export async function autoSiren(params: AutoSirenOptions) {
         bar.style.backgroundColor = "black";
       }
       chart(canvasCtx, zeros);
+      //   stopSiren();
       setTimeout(checkLoop, 2000);
-      stopSiren();
     } else {
       requestAnimationFrame(checkLoop);
     }
@@ -118,3 +123,13 @@ export async function autoSiren(params: AutoSirenOptions) {
 
   checkLoop();
 }
+
+async function recordDetectFFT(){
+  const ctx=
+}
+const fftProfile = new Float32Array(1 << 9);
+const [startBtn, recordBtn] = [
+  mkdiv("button", { onclick: () => autoSiren() }, "start"),
+  mkdiv("button", { onclick: () => autoSiren }, "recordBtn"),
+];
+addEventListener("click", () => autoSiren(), { once: true });
