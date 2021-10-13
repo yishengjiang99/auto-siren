@@ -11,6 +11,8 @@
   "author": "Yisheng Jiang",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^10.0.0",
+    "grepupload": "^1.1.10",
     "mk-60fps": "^1.2.1",
     "mkdiv": "^3",
     "react": "^17.0.2",
