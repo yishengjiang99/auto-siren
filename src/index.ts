@@ -53,8 +53,6 @@ async function autoSiren(params: AutoSirenOptions = defaultOptions) {
       stopSiren: () => volume.gain.linearRampToValueAtTime(0, 1),
     };
   }
-
-  container.style.background = "black";
   const sirenBar = mkdiv(
     "div",
     {
@@ -96,9 +94,9 @@ async function autoSiren(params: AutoSirenOptions = defaultOptions) {
 
     canvasCtx.strokeText("waaa index: " + indexVal, 10, 120, 130);
     canvasCtx.strokeText("siren: " + siren, 10, 200, 130);
-    if (!siren && indexVal > -10) {
+    if (!siren && indexVal > -80) {
       siren = 60;
-      //startSiren();
+      startSiren();
     }
     if (siren > 0) {
       siren -= 1.1;
@@ -109,12 +107,13 @@ async function autoSiren(params: AutoSirenOptions = defaultOptions) {
     }
     /* ghetto hysteresis */
     if (siren < 0) {
+      stopSiren();
+
       siren = 0;
       for (const bar of bars) {
         bar.style.backgroundColor = "black";
       }
       chart(canvasCtx, zeros);
-      //   stopSiren();
       setTimeout(checkLoop, 2000);
     } else {
       requestAnimationFrame(checkLoop);
@@ -124,12 +123,15 @@ async function autoSiren(params: AutoSirenOptions = defaultOptions) {
   checkLoop();
 }
 
-async function recordDetectFFT(){
-  const ctx=
-}
-const fftProfile = new Float32Array(1 << 9);
-const [startBtn, recordBtn] = [
-  mkdiv("button", { onclick: () => autoSiren() }, "start"),
-  mkdiv("button", { onclick: () => autoSiren }, "recordBtn"),
-];
-addEventListener("click", () => autoSiren(), { once: true });
+document.body.style.background = "black";
+document.body.style.color = "white";
+document.body.innerHTML = "press any key to start";
+
+window.addEventListener(
+  "keydown",
+  () => {
+    document.body.innerHTML = "";
+    autoSiren();
+  },
+  { once: true }
+);
